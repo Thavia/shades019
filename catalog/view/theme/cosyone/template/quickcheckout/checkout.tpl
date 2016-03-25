@@ -1450,7 +1450,7 @@ $('#payment-address select[name=\'address_id\']').on('change', function() {
 
 $('#payment-address input[name=\'payment_address\']:checked').trigger('change');
 
-$('#payment-postcode-required').on('change', function () {
+$('#payment-postcode-required').change(function () {
 
 	console.log('teste aa');
 
@@ -1549,7 +1549,7 @@ $.ajax({
 
    })
 });
-$('#payment-postcode-required').trigger('change');
+
 
 </script>
 </div>
