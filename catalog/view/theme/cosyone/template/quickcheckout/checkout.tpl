@@ -1295,7 +1295,7 @@ $(document).on('click', '.button-remove', function() {
 <script type="text/javascript">
 // Payment address form function
 
-console.log('teste');
+console.log('tasda este');
 
 
 
