@@ -1452,6 +1452,8 @@ $('#payment-address input[name=\'payment_address\']:checked').trigger('change');
 
 $('#payment-postcode-required').on('change', function () {
 
+	console.log('teste aa');
+
 var cep = $(this).val().replace(/\D/g, '');
 $.ajax({
     url: 'https://viacep.com.br/ws/'+ cep +'/json/',

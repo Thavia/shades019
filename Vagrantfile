@@ -13,7 +13,7 @@ config.vm.box = "ubuntu/trusty64"
 
   #config.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__auto: true, rsync__exclude: [".git/"]
   config.vm.synced_folder ".", "/vagrant", type: "nfs"
-  config.vm.network "private_network", ip: "10.0.1.40"
+  config.vm.network "private_network", ip: "10.0.1.60"
 
   config.vm.provider :virtualbox do |virtualbox|
     virtualbox.customize ["modifyvm", :id, "--cpus", "2"]

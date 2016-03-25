@@ -1,1 +1,0 @@
-{"nfs":{"/vagrant":{"type":"nfs","guestpath":"/vagrant","hostpath":"/media/tavia/2a38613b-08ed-48d1-b3b1-3f8a9b45763b/personal-projects/shades019","disabled":false,"map_uid":1000,"map_gid":1000,"nfs_udp":true,"nfs_version":3,"uuid":"3788007602","linux__nfs_options":["rw","no_subtree_check","all_squash","anonuid=1000","anongid=1000","fsid=3788007602"]}}}
