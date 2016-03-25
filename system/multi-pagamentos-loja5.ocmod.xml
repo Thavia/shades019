@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+<name>Libera Multi Formas de Pagamento [Loja5]</name>
+<version>1.0</version>
+<author>Bruno Alencar - suportedaloja@gmail.com</author>
+<code>rapiddo-entregas-loja5</code>
+<description></description>
+
+<file path="admin/controller/extension/payment.php">
+<operation>
+<notes></notes>
+<search index="" regex="false" trim="false"><![CDATA[$this->model_extension_extension->uninstall('payment', $value);]]></search>
+<add offset="0" trim="false" position="replace"><![CDATA[
+//removido
+]]></add>
+</operation>
+</file>
+
+</modification>

@@ -1,0 +1,32 @@
+<extension>
+    <id>shopunity</id>
+    <name>Shopunity Theme Patch</name>
+    <description></description>
+    <type>theme</type>
+    <version>2.0</version>
+	<opencart_version>2.0.0.0,2.0.1.0,2.0.1.1</opencart_version>
+    <mbooth_version>2.4</mbooth_version>
+    <author>Dreamvention</author>
+    <files>
+		<file>system/mbooth/xml/mbooth_shopunity.xml</file>
+	</files>
+	<dirs>
+		<dir>admin/view/javascript/shopunity</dir>
+		<dir>admin/view/stylesheet/shopunity</dir>
+		<dir>admin/view/image/shopunity</dir>
+		<dir>system/library/hyperlight</dir>
+	</dirs>
+	<required>
+		<require></require>
+	</required>
+	<updates>
+		<update version="1.0">
+		</update>
+		<update version="1.1">
+			1. Bug fixes<br/>
+		</update>
+		<update version="2.0">
+			1. Added compatiblity with version 2.0 bootstrap<br/>
+		</update>
+	</updates>
+</extension>

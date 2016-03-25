@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<modification>
+	<id>API Loopback fix using subdomain</id>
+	<version>2.0</version>
+	<vqmver>2.5.1</vqmver>
+	<author>vqmod.com</author>
+		
+	<file name="admin/controller/sale/order.php" info="Replace HTTPS_CATALOG calls with alternate server">
+		
+		<operation error="log" info="Disable 443 connections to avoid issues">
+			<search position="replace"><![CDATA[
+			curl_setopt($curl, CURLOPT_PORT, 443);
+			]]></search>
+			<add><![CDATA[
+			//curl_setopt($curl, CURLOPT_PORT, 443);
+			]]></add>
+		</operation>
+		
+		<operation error="log" info="replace the curl url with the alternate server, and pass the real server as a param">
+			<search position="after"><![CDATA[
+			curl_setopt($curl, CURLOPT_URL, HTTPS_CATALOG . 'index.php?route=api/login');
+			]]></search>
+			<add><![CDATA[
+			curl_setopt($curl, CURLOPT_URL, 'http://websumare.com.br/opencart/curlbounce.php');
+			$api_info['redirect_url'] = HTTPS_CATALOG . 'index.php?route=api/login';
+			]]></add>
+		</operation>
+		
+		<operation error="log" info="Special handling for multistore">
+			<search position="before"><![CDATA[
+			curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($this->request->post));
+			]]></search>
+			<add><![CDATA[
+			curl_setopt($curl, CURLOPT_URL, 'http://websumare.com.br/opencart/curlbounce.php');
+			$this->request->post['redirect_url'] = $url . 'index.php?route=' . $this->request->get['api'] . ($url_data ? '&' . http_build_query($url_data) : '');
+			]]></add>
+		</operation>
+		
+		<operation error="log" info="Special handling for multistore. Changed to post so that i could add the redirect_url">
+			<search position="after"><![CDATA[
+			curl_setopt($curl, CURLOPT_URL, HTTPS_CATALOG . 'index.php?route=api/order/delete&order_id=' . $this->request->get['order_id']);
+			]]></search>
+			<add><![CDATA[
+			curl_setopt($curl, CURLOPT_URL, 'http://websumare.com.br/opencart/curlbounce.php');
+			$api_info['redirect_url'] = (HTTPS_CATALOG . 'index.php?route=api/order/delete&order_id=' . $this->request->get['order_id']);
+			curl_setopt($curl, CURLOPT_POST, true);
+			curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($api_info));
+			]]></add>
+		</operation>
+		
+		<operation error="log" info="Special handling for multistore. Changed to post so that i could add the redirect_url">
+			<search position="after"><![CDATA[
+			$json = curl_exec
+			]]></search>
+			<add><![CDATA[
+			$info = curl_getinfo($curl);
+			file_put_contents(DIR_LOGS . 'api_curl_bounce_debug.txt', "\r\n-----------\r\nSENT: " . http_build_query($api_info) . "\r\nRESPONSE: " . print_r($json,1) . "\r\nCURLINFO: " . print_r($info,1) . "\r\n", FILE_APPEND);
+			]]></add>
+		</operation>
+			
+		<operation error="log" info="Special handling for multistore. Changed to post so that i could add the redirect_url">
+			<search position="replace"><![CDATA[
+			if ($this->request->post) {
+			]]></search>
+			<add><![CDATA[
+			if (true) {
+				$api_info = $this->request->post ? $this->request->post : array();
+			]]></add>
+		</operation>
+		
+		
+	</file>
+</modification>

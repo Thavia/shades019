@@ -1,0 +1,383 @@
+<?php
+include("app/gn5/vendor/autoload.php");
+use Gerencianet\Exception\GerencianetException;
+use Gerencianet\Gerencianet;
+
+class ControllerPaymentGN5 extends Controller {
+	
+	public function index() {	
+		$this->load->model('checkout/order');
+		$this->language->load('payment/cod');
+		
+		//meios
+		$data['bo'] = false;
+		$data['cc'] = $this->config->get('gn5_cartao');
+		
+		//modo
+		$data['modo'] = $this->config->get('gn5_modo');
+		
+		//conta
+		$data['conta'] = $this->config->get('gn5_conta');
+
+		//opcoes gerencianet
+		$options = array(
+		"client_id"=>trim($this->config->get('gn5_id')),
+		"client_secret"=>trim($this->config->get('gn5_sec')),
+		"sandbox"=>(($data['modo']==0)?true:false),
+		"debug"=>false
+		);
+
+		//retorno
+		$data['url_criar'] = $this->url->link('payment/gn5/criar');
+		
+		//dados pedido
+		$order_info = $this->model_checkout_order->getOrder($this->session->data['order_id']);
+		$data['pedido'] = $order_info;
+		
+		//se ja vai com fiscal
+		$fiscal = '';
+		$custom_fiscal = $this->config->get('gn5_fiscal');
+		if(isset($order_info['custom_field'][$custom_fiscal])){
+		$fiscal = preg_replace('/\D/', '', $order_info['custom_field'][$custom_fiscal]);	
+		}
+		$data['fiscal'] = $fiscal;
+		
+		$items = [[
+		'name' => 'Pedido #'.$order_info['order_id'].' em '.$order_info['store_name'].'',
+		'amount' => 1,
+		'value' => (float)number_format($order_info['total'], 2, '', '')
+		]];
+		
+        //todos os itens  
+		$body = [
+		'items' => $items,
+		'metadata' => [
+			'custom_id' => (string)$order_info['order_id'],
+			'notification_url' => $this->url->link('payment/gn5/ipn','','SSL'),
+		]
+		];
+		
+		try {
+			
+			$api = new Gerencianet($options);
+			$data['charge'] = $api->createCharge([], $body);
+			
+			//totais
+			$data['total_pedido'] = $this->currency->format($order_info['total']);
+			
+			//totais floatval
+			$data['total_pedido_float'] = $order_info['total'];
+			
+			if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/payment/gn5.tpl')) {
+			return $this->load->view($this->config->get('config_template') . '/template/payment/gn5.tpl', $data);
+			} else {
+				return $this->load->view('default/template/payment/gn5.tpl', $data);
+			}
+			
+		} catch (GerencianetException $e) {
+			$this->log->write("Erro GN - ".(isset($e->error)?$e->error:$e->errorDescription));
+			return $this->erro_exception((isset($e->error)?$e->error:$e->errorDescription));
+		} catch (Exception $e) {
+			$this->log->write("Erro GN - ".$e->getMessage());
+			return $this->erro_exception($e->getMessage());
+		}
+	}
+	
+	public function erro_exception($erro){
+		return '<div class="alert alert-danger warning" role="alert"><i class="fa fa-exclamation-circle"></i> '.(is_array($erro)?$erro['message']:$erro).'</div>';
+	}
+	
+	public function converte_data($data){
+		$p = explode('/',$data);
+		return @$p[2].'-'.@$p[1].'-'.@$p[0];
+	}
+	
+	public function criar() {
+		$this->load->model('checkout/order');
+		
+		$order_info = $this->model_checkout_order->getOrder($this->session->data['order_id']);
+		
+		//modo
+		$data['modo'] = $this->config->get('gn5_modo');
+		
+		//conta
+		$data['conta'] = $this->config->get('gn5_conta');
+		
+		//opcoes gerencianet
+		$options = array(
+		"client_id"=>trim($this->config->get('gn5_id')),
+		"client_secret"=>trim($this->config->get('gn5_sec')),
+		"sandbox"=>(($data['modo']==0)?true:false),
+		"debug"=>false
+		);
+		
+		$params = ['id' => (int)$_POST['orderid']];
+		
+		if($_POST['meio']=='boleto'){
+
+		//boleto
+		$log = 'Boleto - Transação '.$_POST['orderid'].' ';
+		$add_days = 4;
+		$datas = strtotime($order_info['date_added']);
+		$data_vencimento = date('Y-m-d',$datas + (24*3600*$add_days));
+		$customer = [
+			'name' => (preg_replace('/\s+/', ' ',trim($order_info['firstname']).' '.trim($order_info['lastname']))),
+			'cpf' => preg_replace('/\D/', '', $_POST['fiscal']),
+			'phone_number' => preg_replace('/\D/', '', $_POST['telefone'])
+		];
+		$body = [
+			'payment' => [
+				'banking_billet' => [
+					'expire_at' => $data_vencimento,
+					'customer' => $customer
+				]
+			]
+		];
+		
+		}else{
+
+		//endereco
+		$log = 'Cartão - Transação '.$_POST['orderid'].' em '.(int)$_POST['parcelas'].'x';
+		$numero = $this->config->get('gn5_numero');
+		$numero_logradouro = (isset($order_info['payment_custom_field'][$numero]))?$order_info['payment_custom_field'][$numero]:preg_replace('/\D/', '', $order_info['payment_address_1']);
+		$logradouro = (trim(str_replace(',','',preg_replace('/\d+/','',$order_info['payment_address_1']))));
+		$bairro = ((empty($order_info['payment_address_2'])?'Bairro':$order_info['payment_address_2']));
+		$cep = $order_info['payment_postcode'];
+		$cidade = ($order_info['payment_city']);
+		$estado = $order_info['payment_zone_code'];	
+			
+		//cartao de credito
+		$paymentToken = $_POST['token_cartao'];
+		$customer = [
+			'name' => (preg_replace('/\s+/', ' ',trim($order_info['firstname']).' '.trim($order_info['lastname']))),
+			'cpf' => preg_replace('/\D/', '', $_POST['fiscal']),
+			'phone_number' => preg_replace('/\D/', '', $_POST['telefone']),
+			'email' => $order_info['email'],
+			'birth' => $this->converte_data($_POST['data'])
+		];
+		$billingAddress = [
+			'street' => $logradouro,
+			'number' => (!empty($numero_logradouro)?$numero_logradouro:'*'),
+			'neighborhood' => (!empty($bairro)?$bairro:'*'),
+			'zipcode' => preg_replace('/\D/', '', $cep),
+			'city' => $cidade,
+			'state' => $estado,
+		];
+		$body = [
+			'payment' => [
+				'credit_card' => [
+					'installments' => (int)($_POST['parcelas']),
+					'billing_address' => $billingAddress,
+					'payment_token' => $paymentToken,
+					'customer' => $customer
+				]
+			]
+		];
+			
+		}
+		
+		$data['continue'] = $this->url->link('checkout/checkout','','SSL');
+		
+		try {
+			$api = new Gerencianet($options);
+			$charge = $api->payCharge($params, $body);
+
+			$status_id = $this->status($charge['data']['status']);
+		
+			//se boleto segunda via
+			if(isset($charge['data']['barcode'])){
+				$log .= '<a href="'.$charge['data']['link'].'" target="_blank">[segunda via]</a>';
+			}
+			
+			$this->model_checkout_order->addOrderHistory($this->session->data['order_id'],$status_id,$log,true);
+			
+			$ret = $this->url->link('payment/gn5/cupom&id='.(int)$_POST['orderid'].'&venda='.$this->session->data['order_id'].'','','SSL');
+			$this->response->redirect($ret);
+			
+		} catch (GerencianetException $e) {
+		
+		$this->log->write("Erro GN - ".(isset($e->error)?print_r($e->error,true):print_r($e->errorDescription,true)));
+		$this->document->setTitle('Erro na Transa&ccedil;&atilde;o (01)');
+		$this->document->setDescription('');
+		$this->document->setKeywords('');
+		$data['erro'] = $this->erro_exception((isset($e->error)?$e->error:$e->errorDescription));
+		$tema = 'default/template/payment/gn5_erro.tpl';	
+		$data['column_left'] = $this->load->controller('common/column_left');
+		$data['column_right'] = $this->load->controller('common/column_right');
+		$data['content_top'] = $this->load->controller('common/content_top');
+		$data['content_bottom'] = $this->load->controller('common/content_bottom');
+		$data['footer'] = $this->load->controller('common/footer');
+		$data['header'] = $this->load->controller('common/header');
+		$this->response->setOutput($this->load->view($tema, $data));
+			
+		} catch (Exception $e) {
+			
+		$this->log->write("Erro GN - ".$e->getMessage());
+		$this->document->setTitle('Erro na Transa&ccedil;&atilde;o (02)');
+		$this->document->setDescription('');
+		$this->document->setKeywords('');
+		$data['erro'] = $this->erro_exception($e->getMessage());
+		$tema = 'default/template/payment/gn5_erro.tpl';
+		
+		$data['column_left'] = $this->load->controller('common/column_left');
+		$data['column_right'] = $this->load->controller('common/column_right');
+		$data['content_top'] = $this->load->controller('common/content_top');
+		$data['content_bottom'] = $this->load->controller('common/content_bottom');
+		$data['footer'] = $this->load->controller('common/footer');
+		$data['header'] = $this->load->controller('common/header');
+		
+		$this->response->setOutput($this->load->view($tema, $data));
+		
+		}
+
+	}
+	
+	public function status($status){
+		switch($status){
+			case 'waiting':
+			case 'new':
+			return $this->config->get('gn5_in');
+			break;
+			case 'paid':
+			return $this->config->get('gn5_pg');
+			break;
+			case 'canceled':
+			return $this->config->get('gn5_ca');
+			break;
+			case 'unpaid':
+			return $this->config->get('gn5_ne');
+			break;
+			case 'contested':
+			return $this->config->get('gn5_di');
+			break;
+			case 'refunded':
+			return $this->config->get('gn5_de');
+			break;
+		}
+	}
+	
+	public function cupom(){
+		$this->load->model('checkout/order');
+		$this->document->setTitle('Resultado da Transa&ccedil;&atilde;o');
+		$this->document->setDescription('');
+		$this->document->setKeywords('');
+		
+		//modo
+		$data['modo'] = $this->config->get('gn5_modo');
+		
+		//conta
+		$data['conta'] = $this->config->get('gn5_conta');
+		
+		//opcoes gerencianet
+		$options = array(
+		"client_id"=>trim($this->config->get('gn5_id')),
+		"client_secret"=>trim($this->config->get('gn5_sec')),
+		"sandbox"=>(($data['modo']==0)?true:false),
+		"debug"=>false
+		);
+		
+		$params = ['id' => (int)$_GET['id']];
+		try {
+			$api = new Gerencianet($options);
+			$charge = $api->detailCharge($params, []);
+			$order_info = $this->model_checkout_order->getOrder($charge['data']['custom_id']);
+			
+			$data['erro'] = false;
+			$data['iframe'] = $this->url->link('checkout/success','','SSL');
+			$data['dados'] = $charge;
+			$data['order'] = $order_info;
+			$data['pedido'] = $order_info['order_id'];
+			$data['status'] = $this->getStatusPagamento($charge['data']['status']);
+
+		} catch (GerencianetException $e) {
+			$data['erro'] = true;
+			$data['msg'] = isset($e->error)?print_r($e->error,true):$e->errorDescription;
+		} catch (Exception $e) {
+			$data['erro'] = true;
+			$data['msg'] = $e->getMessage();
+		}
+		
+		$tema = 'default/template/payment/gn5_recibo.tpl';
+		$data['column_left'] = $this->load->controller('common/column_left');
+		$data['column_right'] = $this->load->controller('common/column_right');
+		$data['content_top'] = $this->load->controller('common/content_top');
+		$data['content_bottom'] = $this->load->controller('common/content_bottom');
+		$data['footer'] = $this->load->controller('common/footer');
+		$data['header'] = $this->load->controller('common/header');
+		$this->response->setOutput($this->load->view($tema, $data));
+	}
+	
+	public function ipn(){
+		$this->load->model('checkout/order');
+		if(isset($_POST['notification'])){		
+		//modo
+		$data['modo'] = $this->config->get('gn5_modo');
+		//conta
+		$data['conta'] = $this->config->get('gn5_conta');
+		
+		//opcoes gerencianet
+		$options = array(
+		"client_id"=>trim($this->config->get('gn5_id')),
+		"client_secret"=>trim($this->config->get('gn5_sec')),
+		"sandbox"=>(($data['modo']==0)?true:false),
+		"debug"=>false
+		);
+		$token = $_POST['notification'];
+		$params = [
+		  'token' => $token
+		];
+		try {
+			$api = new Gerencianet($options);
+			$notification = $api->getNotification($params, []);
+			//pega a ultima interacao do sistema
+			$detalhes = end($notification['data']);
+			if(isset($detalhes['custom_id'])){
+				$order = $this->model_checkout_order->getOrder($detalhes['custom_id']);
+				$status_gerencianet = $this->status($detalhes['status']['current']);
+				if($order['order_status_id']>0 && $order['order_status_id']!=$status_gerencianet){
+					$this->model_checkout_order->addOrderHistory($detalhes['custom_id'],$status_gerencianet,'',true);
+				}
+			}
+			print_r($notification);
+		} catch (GerencianetException $e) {
+			if(isset($e->code)){
+			print_r($e->code);
+			}
+			if(isset($e->error)){
+			print_r($e->error);
+			}
+			if(isset($e->errorDescription)){
+			print_r($e->errorDescription);
+			}
+		} catch (Exception $e) {
+			print_r($e->getMessage());
+		}
+		}
+    }
+	
+	private function getStatusPagamento($status) {
+		switch($status){
+			case 'waiting':
+			case 'new':
+			return 'Aguardando Pagamento';
+			break;
+			case 'paid':
+			return 'Pago';
+			break;
+			case 'canceled':
+			return 'Cancelado';
+			break;
+			case 'unpaid':
+			return 'N&atilde;o Pago';
+			break;
+			case 'contested':
+			return 'Contestada';
+			break;
+			case 'refunded':
+			return 'Devolvido';
+			break;
+		}
+	}
+
+}
+?>

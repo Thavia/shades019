@@ -1,0 +1,15 @@
+---------- Date: 2016-03-22 21:07:00 ~ IP : 187.183.33.122 ----------
+REQUEST URI : /admin/index.php?route=extension/module&token=6f8d590933b06e3c6dc0426f5edc06ea
+MOD DETAILS:
+   modFile   : /home/shadesco/public_html/vqmod/xml/cosyone_product_tabs_admin.xml
+   id        : Additional Product Tabs
+   version   : 1.0.3
+   vqmver    : 2.2.1
+   author    : Godfrey Livinstone
+
+File Name    : admin/model/catalog/product.php(2)
+VQModObject::applyMod - SEARCH NOT FOUND (SKIPPED): $data = array_merge($data, array('product_attribute' => $this->getProductAttributes($product_id)));
+
+----------------------------------------------------------------------
+
+

@@ -1,0 +1,145 @@
+
+/* display none until init */
+.product-carousel{
+	display: none;
+	opacity:1!important;
+	position: relative;
+	width: 100%;
+	-ms-touch-action: pan-y;
+}
+#column-left .product-carousel, #column-right .product-carousel { display:block;}
+#column-left .customNavigation, #column-right .customNavigation { display:none;}
+
+#column-left .banners-slider-carousel .customNavigation,
+#column-right .banners-slider-carousel .customNavigation{ display:block;}
+
+.product-carousel .slider-wrapper{
+	display: none;
+	position: relative;
+	-webkit-transform: translate3d(0px, 0px, 0px);
+	-webkit-perspective: 1000;
+}
+.product-carousel .slider-wrapper-outer{
+	overflow: hidden;
+	position: relative;
+	width: 100%;
+}
+.product-carousel .slider-wrapper-outer.autoHeight{
+	-webkit-transition: height 500ms ease-in-out;
+	-moz-transition: height 500ms ease-in-out;
+	-ms-transition: height 500ms ease-in-out;
+	-o-transition: height 500ms ease-in-out;
+	transition: height 500ms ease-in-out;
+}
+	
+.product-carousel .slider-item{
+	float: left;
+}
+.slider-controls .slider-page,
+.slider-controls .slider-buttons div{
+	cursor: pointer;
+}
+.slider-controls {
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* mouse grab icon */
+ 
+
+
+
+/* fix */
+.product-carousel  .slider-wrapper,
+.product-carousel  .slider-item{
+	-webkit-backface-visibility: hidden;
+	-moz-backface-visibility:    hidden;
+	-ms-backface-visibility:     hidden;
+}
+.customNavigation    { text-align: center; position:relative;width:100%}
+.customNavigation a{
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	-webkit-tap-highlight-color:transparent;
+	display: block;
+    float: right;
+    position: absolute;
+    top: -29px;
+}
+
+#products-related .customNavigation a {top: -29px;}
+
+.customNavigation a.prev ,.customNavigation span.prev {
+    right:0px;
+	background: url(../../image/megnor/sprite.png) no-repeat scroll -40px 2px rgba(0, 0, 0, 0);
+	height: 20px;
+	width: 20px;
+	cursor:pointer;
+}
+
+.customNavigation a.prev:hover 	{ text-decoration:none;}
+.customNavigation a.next ,.customNavigation span.next {
+    right:15px;
+	cursor:pointer;
+	background: url(../../image/megnor/sprite.png) no-repeat scroll -10px 2px rgba(0, 0, 0, 0);
+	height: 20px;
+	width: 20px;
+
+}
+.customNavigation a.next:hover 	{  text-decoration:none;}
+
+.banners-slider-carousel .product-carousel{  width:auto; margin:0 15px; }
+.banners-slider-carousel .customNavigation a.prev {
+    right:0px;
+	top:35px;
+	z-index:999;  
+	cursor:pointer;
+	width:20px;
+	color:#000000;
+}
+.banners-slider-carousel .customNavigation a.prev:hover 	{text-decoration:none; z-index:999;}
+.banners-slider-carousel .customNavigation a.next {
+    left:0px;
+	top:35px;
+	cursor:pointer;
+	z-index:999; 
+	color:#000000;
+}
+.banners-slider-carousel .customNavigation a.next:hover 	{text-decoration:none; z-index:999;}
+
+
+.product-info .product-image .customNavigation    { text-align: center; width:100%; z-index:9;}
+.product-info .product-image .customNavigation a{
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	-webkit-tap-highlight-color: transparent;
+	display: block;
+    position: absolute;
+    top: 28px;
+}
+.product-info .product-image .customNavigation span.prev {
+    right:0px;
+	top:24px;
+	 position:absolute;
+	 cursor:pointer;
+}
+.product-info .product-image .customNavigation span.prev:hover 	{  text-decoration:none;}
+.product-info .product-image .customNavigation span.next {
+	left: 0;
+	top:24px;
+	 position:absolute;
+	 cursor:pointer;
+}
+.product-info .product-image .customNavigation span.next:hover 	{  text-decoration:none;}
+
+
